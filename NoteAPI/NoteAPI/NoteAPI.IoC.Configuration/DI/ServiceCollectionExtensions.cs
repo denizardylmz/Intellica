@@ -1,14 +1,14 @@
 ﻿using System.Reflection;
 
 using FluentValidation;
-
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
+using NoteAPI.API.Common.Settings;
+using NoteAPI.Repo.SqlDatabase.Context;
 using NoteAPI.Services;
 using NoteAPI.Services.Contracts;
-using NoteAPI.Services.Model;
-using NoteAPI.Services.Validators;
+using NoteAPI.Services.Services;
 
 namespace NoteAPI.IoC.Configuration.DI
 {
@@ -18,13 +18,16 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             if (services != null)
             {
-                services.AddTransient<IUserService, UserService>();
+                services.AddTransient<INoteService, NoteService>();
             }
         }
 
         public static void ConfigureRepositories(this IServiceCollection services, IConfiguration configuration)
         {
-            //TO BE COMPLETED IF NEEDED
+            var applicationInsights = configuration.GetSection(nameof(ApplicationInsights)).Get<ApplicationInsights>();
+
+
+            services.AddDbContext<NoteAPISqlDbContext>(options => options.UseSqlServer(applicationInsights.ConnectionString));
         }
 
         public static void ConfigureMappings(this IServiceCollection services)
@@ -40,8 +43,8 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             if (services != null)
             {
-                services.AddScoped<IValidator<UserCreation>, UserCreationValidation>();
-                services.AddScoped<IValidator<User>, UserValidator>();
+                //services.AddScoped<IValidator<UserCreation>, UserCreationValidation>();
+                //services.AddScoped<IValidator<User>, UserValidator>();
             }
         }
     }

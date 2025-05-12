@@ -29,6 +29,8 @@ using NoteAPI.API.Common.Middlewares;
 using NoteAPI.API.Common.Settings;
 using NoteAPI.API.Swagger;
 using NoteAPI.IoC.Configuration.DI;
+using NoteAPI.Repo.SqlDatabase.Context;
+using Microsoft.EntityFrameworkCore;
 
 #pragma warning disable CS1591
 namespace NoteAPI.API
@@ -233,7 +235,7 @@ namespace NoteAPI.API
 
                     app.UseHsts();
                 }
-
+                
                 app.UseHttpsRedirection();
                 app.UseRouting();
                 app.UseAuthorization();

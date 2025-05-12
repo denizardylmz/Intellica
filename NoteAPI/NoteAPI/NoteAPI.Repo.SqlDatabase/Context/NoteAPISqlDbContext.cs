@@ -16,13 +16,19 @@ namespace NoteAPI.Repo.SqlDatabase.Context
         }
 
         public virtual DbSet<User> Users { get; set; }
+        public DbSet<Note> Notes { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
-                optionsBuilder.UseSqlServer("Name=ConnectionStrings:NoteAPIConnectionString");
+                optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=HomeDB;Trusted_Connection=True;TrustServerCertificate=True;");
+        }
 
-            // Enable sensitive data logging
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+
+
         }
     }
 }

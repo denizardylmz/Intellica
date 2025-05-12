@@ -13,8 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NoteAPI.API.Common\NoteAPI.API.Common.csproj" />
-    <ProjectReference Include="..\NoteAPI.Services.Contracts\NoteAPI.Services.Contracts.csproj" />
-    <ProjectReference Include="..\NoteAPI.Services.Model\NoteAPI.Services.Model.csproj" />
+    <ProjectReference Include="..\NoteAPI.Repo.SqlDatabase\NoteAPI.Repo.SqlDatabase.csproj" />
     <ProjectReference Include="..\NoteAPI.Tools\NoteAPI.Tools.csproj" />
   </ItemGroup>
 

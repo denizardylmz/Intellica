@@ -11,8 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NoteAPI.API.DataContracts\NoteAPI.API.DataContracts.csproj" />
-    <ProjectReference Include="..\NoteAPI.Services.Contracts\NoteAPI.Services.Contracts.csproj" />
-    <ProjectReference Include="..\NoteAPI.Services.Model\NoteAPI.Services.Model.csproj" />
+    <ProjectReference Include="..\NoteAPI.Repo.SqlDatabase\NoteAPI.Repo.SqlDatabase.csproj" />
     <ProjectReference Include="..\NoteAPI.Services\NoteAPI.Services.csproj" />
   </ItemGroup>
 

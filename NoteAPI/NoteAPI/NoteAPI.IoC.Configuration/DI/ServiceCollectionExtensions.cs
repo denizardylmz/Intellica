@@ -9,6 +9,7 @@ using NoteAPI.Repo.SqlDatabase.Context;
 using NoteAPI.Services;
 using NoteAPI.Services.Contracts;
 using NoteAPI.Services.Services;
+using NoteAPI.Services.Validators;
 
 namespace NoteAPI.IoC.Configuration.DI
 {
@@ -43,8 +44,7 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             if (services != null)
             {
-                //services.AddScoped<IValidator<UserCreation>, UserCreationValidation>();
-                //services.AddScoped<IValidator<User>, UserValidator>();
+                services.AddValidatorsFromAssemblyContaining<NoteValidation>();
             }
         }
     }

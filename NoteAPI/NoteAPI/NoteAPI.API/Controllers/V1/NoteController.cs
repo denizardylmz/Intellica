@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Asp.Versioning;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -18,6 +19,7 @@ namespace NoteAPI.API.Controllers.V1
     [Consumes("application/json")]
     [Produces("application/json")]
     [ApiController]
+    [Authorize]
     public class NoteController : ControllerBase
     {
         private readonly INoteService _service;
@@ -36,6 +38,7 @@ namespace NoteAPI.API.Controllers.V1
 
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Note))]
         [ProducesResponseType(StatusCodes.Status204NoContent, Type = typeof(Note))]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [HttpGet("fetchAll")]
         public async Task<List<Note>> GetAll()
         {

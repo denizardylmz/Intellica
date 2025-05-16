@@ -31,6 +31,10 @@ using NoteAPI.API.Swagger;
 using NoteAPI.IoC.Configuration.DI;
 using NoteAPI.Repo.SqlDatabase.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi.Models;
 
 #pragma warning disable CS1591
 namespace NoteAPI.API
@@ -164,6 +168,27 @@ namespace NoteAPI.API
                                     options.IncludeXmlComments(item);
                                 }
                             }
+
+
+                            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                            {
+                                Description = "JWT Authorization header. Example: 'Bearer {token}'",
+                                Name = "Authorization",
+                                In = ParameterLocation.Header,
+                                Type = SecuritySchemeType.ApiKey
+                            });
+
+                            options.AddSecurityRequirement(new OpenApiSecurityRequirement{
+                                {
+                                    new OpenApiSecurityScheme{
+                                        Reference = new OpenApiReference{
+                                            Type = ReferenceType.SecurityScheme,
+                                            Id = "Bearer"
+                                        }
+                                    },
+                                    Array.Empty<string>()
+                                }
+                            });
                         });
                     }
 
@@ -183,6 +208,28 @@ namespace NoteAPI.API
 
                     //BUSINESS VALIDATORS
                     services.ConfigureValidators();
+
+                    //AddAuthentication
+                    services.AddAuthentication(options =>
+                    {
+                        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    })
+                        .AddJwtBearer(options =>
+                        {
+                            options.TokenValidationParameters = new TokenValidationParameters()
+                            {
+                                ValidateIssuer = true,
+                                ValidIssuer = "Deniz'sNoteAPI",
+                                ValidateAudience = true,
+                                ValidAudience = "NoteClient",
+                                ValidateIssuerSigningKey = true,
+                                ValidateLifetime = true,
+                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("HooppaAPIHooppaAPI1234HooppaAPIHooppaAPI1234"))
+                            };
+                        });
+
+
 
                     _logger.LogDebug("Startup::ConfigureServices::ApiVersioning, Swagger and DI settings");
                 }
@@ -238,11 +285,16 @@ namespace NoteAPI.API
                 
                 app.UseHttpsRedirection();
                 app.UseRouting();
+
+                app.UseAuthentication();
                 app.UseAuthorization();
+
                 app.UseEndpoints(endpoints => {
                     endpoints.MapControllers();
                 });
                 app.UseRequestLocalization();
+
+                
 
                 //SWAGGER
                 if (_appSettings.IsValid())

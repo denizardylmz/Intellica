@@ -19,14 +19,16 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             if (services != null)
             {
-                services.AddTransient<INoteService, NoteService>();
+                services.AddScoped<INoteService, NoteService>();
+                services.AddScoped<IUserService, UserService>();
+
+                services.AddHttpContextAccessor();
             }
         }
 
         public static void ConfigureRepositories(this IServiceCollection services, IConfiguration configuration)
         {
             var applicationInsights = configuration.GetSection(nameof(ApplicationInsights)).Get<ApplicationInsights>();
-
 
             services.AddDbContext<NoteAPISqlDbContext>(options => options.UseSqlServer(applicationInsights.ConnectionString));
         }

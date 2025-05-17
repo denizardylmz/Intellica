@@ -9,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using NoteAPI.API.Common.Settings;
 using NoteAPI.Repo.SqlDatabase.Context;
-using SqlM = NoteAPI.Repo.SqlDatabase.DTO;
 using NoteAPI.Services.Contracts;
 using SM = NoteAPI.Services.Models;
+using SqlM = NoteAPI.Repo.SqlDatabase.DTO;
 
 namespace NoteAPI.Services.Services
 {

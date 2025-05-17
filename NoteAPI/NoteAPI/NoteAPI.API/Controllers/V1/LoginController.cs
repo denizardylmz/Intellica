@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
+using NoteAPI.Services.Contracts;
+using System.Threading.Tasks;
+using NoteAPI.Services.Models;
 
 namespace NoteAPI.API.Controllers.V1
 {
@@ -25,46 +28,42 @@ namespace NoteAPI.API.Controllers.V1
     {
         private readonly ILogger<LoginController> _logger;
         private readonly IMapper _mapper;
+        private readonly IUserService   _userService;
 
 
-
-        public LoginController(ILogger<LoginController> logger, IMapper mapper)
+        public LoginController(ILogger<LoginController> logger, IMapper mapper, IUserService userService)
         {
             _logger = logger;
             _mapper = mapper;
+            _userService = userService;
         }
 
 
         [AllowAnonymous]
-        [HttpPost]
-        public IActionResult Loging([FromBody] LoginRequest loginRequest)
+        [HttpPost("signin")]
+        public async Task<IActionResult> Loging([FromBody] LoginRequest loginRequest)
         {
-            if (loginRequest.Email == "admin" && loginRequest.Password == "1234")
+            var token = await _userService.Login(loginRequest.Email, loginRequest.Password);
+            
+            if (token == null) return Unauthorized();
+            
+            return Ok(new
             {
-                var claims = new[]
-                {
-            new Claim(ClaimTypes.Name, loginRequest.Email),
-            new Claim(ClaimTypes.Role, "Admin"),
-        };
-
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("HooppaAPIHooppaAPI1234HooppaAPIHooppaAPI1234"));
-                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-                var token = new JwtSecurityToken(
-                    issuer: "Deniz'sNoteAPI",
-                    audience: "NoteClient",
-                    claims: claims,
-                    expires: DateTime.Now.AddMinutes(30),
-                    signingCredentials: creds
-                );
-
-                return Ok(new
-                {
-                    token = new JwtSecurityTokenHandler().WriteToken(token)
-                });
-            }
-            return Unauthorized();
+                token = new JwtSecurityTokenHandler().WriteToken(token)
+            });
         }
+
+        [AllowAnonymous]
+        [HttpPost("signup")]
+        public async Task<IActionResult> CreateUser([FromBody] User user)
+        {
+            var result = await _userService.CreateUser(user);
+
+            if (user == null) return BadRequest();
+            return Ok(result);
+        }
+
+
 
     }
 }

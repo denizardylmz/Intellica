@@ -9,6 +9,7 @@ namespace NoteAPI.IoC.Configuration.AutoMapper.Profiles
     {
         public APIMappingProfile()
         {
+            CreateMap<SqlM.User, SM.User>().ReverseMap();
             CreateMap<SqlM.Note, SM.Note>().ReverseMap();
         }
     }

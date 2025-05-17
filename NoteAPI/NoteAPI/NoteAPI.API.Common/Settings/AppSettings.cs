@@ -22,6 +22,21 @@ namespace NoteAPI.API.Common.Settings
         public string TermsOfServiceUrl { get; set; }
 
         public ApiLicense License { get; set; }
+
+        public JwtSettings JwtSettings { get; set; }  
+        public Admin Admin { get; set; }
+    }
+
+    public class JwtSettings
+    {
+        public string Issuer { get; set; }
+        public string Audience { get; set; }
+        public string Key { get; set; }
+    }
+    public class Admin
+    {
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 
     public class ApiContact

@@ -26,8 +26,8 @@ namespace NoteAPI.Repo.SqlDatabase.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-                optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=HomeDB;Trusted_Connection=True;TrustServerCertificate=True;");
+            //if (!optionsBuilder.IsConfigured)
+            //    optionsBuilder.UseNpgsql("Host=ep-tight-snowflake-abxnllz4-pooler.eu-west-2.aws.neon.tech;Port=5432;Username=neondb_owner;Password=npg_qVi8t2ubpQDN;Database=neondb;SSL Mode=Require;");
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

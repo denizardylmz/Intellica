@@ -126,7 +126,7 @@ namespace NoteAPI.Services.Services
             await _context.Users.AddAsync(SqlUser);
             await _context.SaveChangesAsync();
 
-            return _mapper.Map<SM.User>(user);
+            return _mapper.Map<SM.User>(SqlUser);
         }
     }
 }

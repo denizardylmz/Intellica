@@ -38,7 +38,6 @@ namespace NoteAPI.API.Controllers.V1
             _userService = userService;
         }
 
-
         [AllowAnonymous]
         [HttpPost("signin")]
         public async Task<IActionResult> Loging([FromBody] LoginRequest loginRequest)
@@ -46,7 +45,6 @@ namespace NoteAPI.API.Controllers.V1
             var token = await _userService.Login(loginRequest.Email, loginRequest.Password);
             
             if (token == null) return Unauthorized();
-            
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(token)

@@ -30,7 +30,7 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             var applicationInsights = configuration.GetSection(nameof(ApplicationInsights)).Get<ApplicationInsights>();
 
-            services.AddDbContext<NoteAPISqlDbContext>(options => options.UseSqlServer(applicationInsights.ConnectionString));
+            services.AddDbContext<NoteAPISqlDbContext>(options => options.UseNpgsql(applicationInsights.ConnectionString));
         }
 
         public static void ConfigureMappings(this IServiceCollection services)

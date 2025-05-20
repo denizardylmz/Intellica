@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace NoteAPI.API.DataContracts.Responses
 {
@@ -9,6 +10,39 @@ namespace NoteAPI.API.DataContracts.Responses
     /// <typeparam name="R"></typeparam>
     public class Response<T, R>
     {
+        /// <summary>
+        /// Constructer
+        /// </summary>
+        public Response(T request, Task<R> task = null)
+        {
+            CorrelationId = Guid.NewGuid().ToString();
+            Request = request;
+
+            RequestDate = DateTime.Now;
+            ResultTask = task;
+        }
+
+        /// <summary>
+        /// Execute Task
+        /// </summary>
+        public async Task ExecuteTask()
+        {
+            if (ResultTask != null)
+            {
+                try
+                {
+                    ResponseContent = await ResultTask;
+                    IsSuccessfull = true;
+                    ResponseDate = DateTime.Now;
+                }
+                catch (Exception e)
+                {
+                    IsSuccessfull = false;
+                    Error = e.Message;
+                }
+            }
+        }
+
         /// <summary>
         /// Request
         /// </summary>
@@ -28,7 +62,7 @@ namespace NoteAPI.API.DataContracts.Responses
         /// Response date
         /// </summary>
         public DateTime ResponseDate { get; set; }
-        
+
 
         /// <summary>
         /// Response content
@@ -44,5 +78,8 @@ namespace NoteAPI.API.DataContracts.Responses
         /// Error message(s)
         /// </summary>
         public string Error { get; set; }
+
+
+        private Task<R> ResultTask { get; set; }
     }
 }

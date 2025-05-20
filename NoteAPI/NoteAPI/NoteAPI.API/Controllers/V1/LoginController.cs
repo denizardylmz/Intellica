@@ -13,6 +13,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
 using NoteAPI.Services.Contracts;
 using System.Threading.Tasks;
+using NoteAPI.API.DataContracts.Requests;
+using NoteAPI.API.DataContracts.Responses;
 using NoteAPI.Services.Models;
 
 namespace NoteAPI.API.Controllers.V1
@@ -40,28 +42,34 @@ namespace NoteAPI.API.Controllers.V1
 
         [AllowAnonymous]
         [HttpPost("signin")]
-        public async Task<IActionResult> Loging([FromBody] LoginRequest loginRequest)
+        public async Task<IActionResult> Loging([FromBody] Request<LoginRequest> request)
         {
-            var token = await _userService.Login(loginRequest.Email, loginRequest.Password);
+            var response = new Response<LoginRequest, JwtSecurityToken>(
+                request.Payload, 
+                _userService.Login(request.Payload.Email, request.Payload.Password)
+            );
+            await response.ExecuteTask();
             
-            if (token == null) return Unauthorized();
+            if (response.ResponseContent == null) return Unauthorized();
             return Ok(new
             {
-                token = new JwtSecurityTokenHandler().WriteToken(token)
+                token = new JwtSecurityTokenHandler().WriteToken(response.ResponseContent)
+                
             });
         }
 
         [AllowAnonymous]
         [HttpPost("signup")]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        public async Task<IActionResult> CreateUser([FromBody] Request<User> request)
         {
-            var result = await _userService.CreateUser(user);
-
-            if (user == null) return BadRequest();
-            return Ok(result);
+            var response = new Response<User, User>(
+                request.Payload, 
+                _userService.CreateUser(request.Payload)
+                );
+            await response.ExecuteTask();
+            
+            if (!response.IsSuccessfull) return BadRequest(response.Error);
+            return Ok(response);
         }
-
-
-
     }
 }

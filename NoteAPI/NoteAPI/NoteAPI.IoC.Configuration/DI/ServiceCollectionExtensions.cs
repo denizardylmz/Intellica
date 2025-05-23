@@ -19,6 +19,8 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             if (services != null)
             {
+                services.AddHttpClient();
+                services.AddScoped<IExternalApiService, ExternalApiService>();
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
 

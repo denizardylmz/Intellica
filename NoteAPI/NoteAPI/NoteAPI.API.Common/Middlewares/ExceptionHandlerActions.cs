@@ -34,7 +34,6 @@ namespace NoteAPI.API.Common.Middlewares
                 await HandleExceptionAsync(context, ex);
             }
         }
-
         private Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             var code = HttpStatusCode.InternalServerError; // 500 if unexpected

@@ -58,4 +58,16 @@ namespace NoteAPI.API.Common.Settings
         [Required]
         public bool Enabled { get; set; }
     }
+
+    public class ExternalServices
+    {
+        public ForecastService ForecastService { get; set; }
+    }
+
+    public class ForecastService
+    {
+        public string Name { get; set; }
+        public string BaseUrl { get; set; }
+        public string Key { get; set; }
+    }
 }

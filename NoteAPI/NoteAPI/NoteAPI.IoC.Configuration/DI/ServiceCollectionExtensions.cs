@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -19,11 +20,13 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             if (services != null)
             {
-                services.AddHttpClient();
-                services.AddScoped<IExternalApiService, ExternalApiService>();
+                var externalServices = configuration.GetSection("ExternalServices").Get<ExternalServices>();
+                
+                services.AddHttpClient(externalServices.ForecastService.Name, c => c.BaseAddress = new Uri(externalServices.ForecastService.BaseUrl));
+                
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
-
+                
                 services.AddHttpContextAccessor();
             }
         }

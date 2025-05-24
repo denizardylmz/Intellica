@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -12,17 +15,32 @@ namespace NoteAPI.Services.Services;
 public class ExternalApiService : IExternalApiService
 {
     private readonly HttpClient _httpClient;
-    
+   
     public ExternalApiService(HttpClient httpClient)
     {
-            _httpClient = httpClient;
+        _httpClient = httpClient;
     }
     
-    public async Task<TResponse> GetAsync<TResponse>(string url, string key = null, CancellationToken cancellationToken = default)
+    public async Task<TResponse> GetAsync<TResponse>(
+        string url, 
+        List<(string key, string value)> queryParams,
+        string keyName = "api-key",
+        string key = null,
+        CancellationToken cancellationToken = default)
     {
+        if (queryParams != null && queryParams.Count != 0)
+        {
+            var queryString = string.Join("&",
+                queryParams.Select(param => $"{Uri.EscapeDataString(param.key)}={Uri.EscapeDataString(param.value)}"));
+        
+            url += url.Contains('?') ? "&" : "?";
+            url += queryString;
+        }
+        
         var request = new HttpRequestMessage(HttpMethod.Get, url);
-        if (key != null)    
-            request.Headers.TryAddWithoutValidation("api-key", key);
+
+        if (key != null)
+            request.Headers.TryAddWithoutValidation(keyName, key);
 
         var result = await _httpClient.SendAsync(request, cancellationToken);
 
@@ -33,7 +51,7 @@ public class ExternalApiService : IExternalApiService
         return JsonConvert.DeserializeObject<TResponse>(json);
     }
 
-    public async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest payload, string key = null,
+    public async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest payload, string keyName = "api-key", string key = null,
         CancellationToken cancellationToken = default)
     {
         var jsonPayload = JsonConvert.SerializeObject(payload);
@@ -43,7 +61,7 @@ public class ExternalApiService : IExternalApiService
         request.Content = stringContent;
         
         if (key != null)    
-            request.Headers.TryAddWithoutValidation("api-key", key);
+            request.Headers.TryAddWithoutValidation(keyName, key);
         
         var response = await _httpClient.SendAsync(request, cancellationToken);
         

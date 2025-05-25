@@ -54,13 +54,12 @@ namespace NoteAPI.API.Controllers.V1
             return Ok(new
             {
                 token = new JwtSecurityTokenHandler().WriteToken(response.ResponseContent)
-                
             });
         }
 
         [AllowAnonymous]
         [HttpPost("signup")]
-        public async Task<IActionResult> CreateUser([FromBody] Request<User> request)
+        public async Task<ActionResult<Response<User, User>>> CreateUser([FromBody] Request<User> request)
         {
             var response = new Response<User, User>(
                 request.Payload, 

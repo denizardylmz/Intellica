@@ -56,8 +56,4 @@ public class ForecastController : ControllerBase
         if (response.ResponseContent == null) return NoContent();
         return Ok(response);
     }
-    
-    
-    
-    
 }

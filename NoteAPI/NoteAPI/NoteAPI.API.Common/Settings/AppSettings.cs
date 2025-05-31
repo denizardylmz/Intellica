@@ -62,6 +62,7 @@ namespace NoteAPI.API.Common.Settings
     public class ExternalServices
     {
         public ForecastService ForecastService { get; set; }
+        public OllamaModel OllamaModel { get; set; }
     }
 
     public class ForecastService
@@ -69,5 +70,12 @@ namespace NoteAPI.API.Common.Settings
         public string Name { get; set; }
         public string BaseUrl { get; set; }
         public string Key { get; set; }
+    }
+
+    public class OllamaModel
+    {
+        public string Name { get; set; }
+        public string ModelName { get; set; }
+        public string BaseUrl { get; set; }
     }
 }

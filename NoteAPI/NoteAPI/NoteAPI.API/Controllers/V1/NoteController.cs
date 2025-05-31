@@ -15,7 +15,6 @@ using NoteAPI.Services.Services;
 namespace NoteAPI.API.Controllers.V1
 {
     [ApiVersion("1.0")]
-    [Route("api/notes")]
     [Route("api/v{version:apiVersion}/notes")]
     [Consumes("application/json")]
     [Produces("application/json")]

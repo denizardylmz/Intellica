@@ -22,7 +22,6 @@ namespace NoteAPI.API.Controllers.V1
 
     [ApiVersion("1.0")]
     [Route("api/login")]//required for default versioning
-    [Route("api/v{version:apiVersion}/login")]
     [Consumes("application/json")]
     [Produces("application/json")]
     [ApiController]

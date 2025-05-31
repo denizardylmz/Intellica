@@ -23,7 +23,9 @@ namespace NoteAPI.IoC.Configuration.DI
                 var externalServices = configuration.GetSection("ExternalServices").Get<ExternalServices>();
                 
                 services.AddHttpClient(externalServices.ForecastService.Name, c => c.BaseAddress = new Uri(externalServices.ForecastService.BaseUrl));
-                
+                services.AddHttpClient(externalServices.OllamaModel.Name, c => c.BaseAddress = new Uri(externalServices.OllamaModel.BaseUrl));
+
+                services.AddScoped<IExternalApiService, ExternalApiService>();
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
                 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -12,47 +13,67 @@ using NoteAPI.API.DataContracts.ExternalAPIContracts;
 using NoteAPI.API.DataContracts.Requests;
 using NoteAPI.API.DataContracts.Responses;
 using NoteAPI.Services.Contracts;
+using NoteAPI.Services.Models.OllamaModels;
 using NoteAPI.Services.Services;
 
 namespace NoteAPI.API.Controllers.V1;
 
 [ApiVersion("1.0")]
-[Route("api/forecast")]
-[Route("api/v{version:apiVersion}/forecast")]
+[Route("api/v{version:apiVersion}/external")]
 [Consumes("application/json")]
 [Produces("application/json")]
 [ApiController]
 public class ForecastController : ControllerBase
 {
     private readonly IConfiguration _configuration;
-    private readonly HttpClient _httpClient;
-    
-    public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    private readonly IExternalApiService _externalApiService;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ExternalServices _externalServices;
+
+    public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IExternalApiService externalApiService)
     {
         _configuration = configuration;
-        var externalServices = configuration.GetSection("ExternalServices").Get<ExternalServices>();
-        _httpClient = httpClientFactory.CreateClient("WeatherApi");
+        _externalApiService = externalApiService;
+        _httpClientFactory = httpClientFactory;
+        _externalServices = _configuration.GetSection("ExternalServices").Get<ExternalServices>();
     }
     
     
     [AllowAnonymous]
-    [HttpPost("current")]
+    [HttpPost("forecast/current")]
     public async Task<ActionResult<Response<string, WeatherResponse>>> ForecastLast1Week([FromBody] Request<string> request)
-    {
-        var service = new ExternalApiService(_httpClient);
-        var externalServices = _configuration.GetSection("ExternalServices").Get<ExternalServices>();
-            
+    {            
         var queryParams = new List<(string, string)>()
         {
             ("q", request.Payload) 
-        }; 
-        
+        };
+        var client = _httpClientFactory.CreateClient(_externalServices.ForecastService.Name);
+        _externalApiService.SetClient(client);
+
         var response = new Response<string, WeatherResponse>(
-            request.Payload, 
-            service.GetAsync<WeatherResponse>("v1/current.json", queryParams: queryParams , keyName:"key", externalServices.ForecastService.Key)
+            request.Payload,
+            _externalApiService.GetAsync<WeatherResponse>("v1/current.json", queryParams: queryParams , keyName:"key", _externalServices.ForecastService.Key)
         );
+
         await response.ExecuteTask();
         
+        if (response.ResponseContent == null) return NoContent();
+        return Ok(response);
+    }
+
+
+    [AllowAnonymous]
+    [HttpPost("ask")]
+    public async Task<ActionResult<Response<OllamaFullResponse, OllamaRequest>>> AskToAI([FromBody] Request<string> request)
+    {
+        var OllamaRequest = new OllamaRequest(_externalServices.OllamaModel.ModelName, request.Payload);
+
+        var response = new Response<string, OllamaFullResponse>(
+            request.Payload,
+            _externalApiService.TalkWithAI(OllamaRequest)
+        );
+        await response.ExecuteTask();
+
         if (response.ResponseContent == null) return NoContent();
         return Ok(response);
     }

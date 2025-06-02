@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
@@ -29,6 +29,7 @@ public class ForecastController : ControllerBase
     private readonly IExternalApiService _externalApiService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ExternalServices _externalServices;
+    private readonly Promts _promts;
 
     public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IExternalApiService externalApiService)
     {
@@ -36,12 +37,13 @@ public class ForecastController : ControllerBase
         _externalApiService = externalApiService;
         _httpClientFactory = httpClientFactory;
         _externalServices = _configuration.GetSection("ExternalServices").Get<ExternalServices>();
+        _promts = _configuration.GetSection("Promts").Get<Promts>();
     }
     
     
     [AllowAnonymous]
     [HttpPost("forecast/current")]
-    public async Task<ActionResult<Response<string, WeatherResponse>>> ForecastLast1Week([FromBody] Request<string> request)
+    public async Task<ActionResult<Response<string, WeatherResponse>>> ForacastCurrent([FromBody] Request<string> request)
     {            
         var queryParams = new List<(string, string)>()
         {
@@ -59,6 +61,37 @@ public class ForecastController : ControllerBase
         
         if (response.ResponseContent == null) return NoContent();
         return Ok(response);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("forecast/ai/report")]
+    public async Task<ActionResult<Response<string, WeatherResponse>>> Forecast1Week([FromBody] Request<string> request)
+    {
+        var queryParams = new List<(string, string)>()
+        {
+            ("days", "3"),
+            ("q", request.Payload)
+        };
+        var client = _httpClientFactory.CreateClient(_externalServices.ForecastService.Name);
+        _externalApiService.SetClient(client);
+
+        var response = new Response<string, WeatherResponse>(
+            request.Payload,
+            _externalApiService.GetAsync<WeatherResponse>("v1/forecast.json", queryParams: queryParams, keyName: "key", _externalServices.ForecastService.Key)
+        );
+
+        await response.ExecuteTask();
+
+        var OllamaRequest = new OllamaRequest(_externalServices.OllamaModel.ModelName, request.Payload, system: _promts.WeatherSpecialist);
+
+        var responseOllama = new Response<string, OllamaFullResponse>(
+            request.Payload,
+            _externalApiService.TalkWithAI(OllamaRequest)
+        );
+        await responseOllama.ExecuteTask();
+
+        if (responseOllama.ResponseContent == null) return NoContent();
+        return Ok(responseOllama);
     }
 
 

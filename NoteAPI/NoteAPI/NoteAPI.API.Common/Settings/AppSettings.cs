@@ -78,4 +78,9 @@ namespace NoteAPI.API.Common.Settings
         public string ModelName { get; set; }
         public string BaseUrl { get; set; }
     }
+
+    public class Promts
+    {
+        public string WeatherSpecialist { get; set; }
+    }
 }

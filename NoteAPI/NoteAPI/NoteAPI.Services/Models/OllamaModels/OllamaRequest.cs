@@ -46,7 +46,7 @@ namespace NoteAPI.Services.Models.OllamaModels
             
         }
         public OllamaOptions(double temperature, double topP, int maxTokens, List<string> Stop = null)
-        {
+        { 
             Temperature= temperature;
             TopP= topP;
             MaxTokens= maxTokens;

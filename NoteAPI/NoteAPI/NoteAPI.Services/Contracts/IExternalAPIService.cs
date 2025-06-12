@@ -17,4 +17,5 @@ public interface IExternalApiService
         CancellationToken cancellationToken = default);
     Task<TResponse> PostAsync<TRequest,TResponse>(string url, TRequest payload,  string keyName = "api-key", string key = null, CancellationToken cancellationToken = default);
     Task<OllamaFullResponse> TalkWithAI(OllamaRequest request, CancellationToken cancellationToken = default);
+    
 }

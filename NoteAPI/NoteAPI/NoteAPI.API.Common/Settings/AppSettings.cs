@@ -23,7 +23,7 @@ namespace NoteAPI.API.Common.Settings
 
         public ApiLicense License { get; set; }
 
-        public JwtSettings JwtSettings { get; set; }  
+        public JwtSettings JwtSettings { get; set; }
         public Admin Admin { get; set; }
     }
 
@@ -82,5 +82,20 @@ namespace NoteAPI.API.Common.Settings
     public class Promts
     {
         public string WeatherSpecialist { get; set; }
+    }
+
+    public class BinanceSettings
+    {
+        public string Key { get; set; }
+        public string Secret { get; set; }
+        public BinanceKlineFetchOptions BinanceKlineFetchOptions {get; set;}
+    }
+
+    public class BinanceKlineFetchOptions
+    {
+        public string[] Symbols { get; set; }
+        public string Interval { get; set; }
+        public int Limit { get; set; }
+        public int RsiPeriod { get; set; }
     }
 }

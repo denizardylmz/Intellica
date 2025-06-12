@@ -35,6 +35,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using NoteAPI.API.Jobs;
 
 #pragma warning disable CS1591
 namespace NoteAPI.API
@@ -208,6 +209,10 @@ namespace NoteAPI.API
 
                     //BUSINESS VALIDATORS
                     services.ConfigureValidators();
+
+                    //JOBS
+                    services.AddQuartzJobs();
+
 
                     //AddAuthentication
                     services.AddAuthentication(options =>

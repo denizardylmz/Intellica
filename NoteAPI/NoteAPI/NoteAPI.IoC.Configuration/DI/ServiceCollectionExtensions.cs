@@ -26,9 +26,11 @@ namespace NoteAPI.IoC.Configuration.DI
                 services.AddHttpClient(externalServices.OllamaModel.Name, c => c.BaseAddress = new Uri(externalServices.OllamaModel.BaseUrl));
 
                 services.AddScoped<IExternalApiService, ExternalApiService>();
+                services.AddScoped<IOllamaChatBotService, OllamaChatBotService>();
+                services.AddScoped<IBinanceService, BinanceService>();
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
-                
+
                 services.AddHttpContextAccessor();
             }
         }
@@ -37,7 +39,7 @@ namespace NoteAPI.IoC.Configuration.DI
         {
             var applicationInsights = configuration.GetSection(nameof(ApplicationInsights)).Get<ApplicationInsights>();
 
-            services.AddDbContext<NoteAPISqlDbContext>(options => options.UseNpgsql(applicationInsights.ConnectionString));
+            services.AddDbContext<NoteAPISqlDbContext>(options => options.UseSqlServer(applicationInsights.ConnectionString));
         }
 
         public static void ConfigureMappings(this IServiceCollection services)

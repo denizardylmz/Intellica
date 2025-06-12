@@ -7,22 +7,20 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using NoteAPI.API.Common.Settings;
 using NoteAPI.Services.Contracts;
 using NoteAPI.Services.Models.OllamaModels;
 
-namespace NoteAPI.Services.Services;
 
+namespace NoteAPI.Services.Services;
 
 public class ExternalApiService : IExternalApiService
 {
     private HttpClient _httpClient;
     private readonly HttpClient _aiClient;
     private readonly IHttpClientFactory _httpClientFactory;
-
 
     public ExternalApiService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
@@ -158,5 +156,6 @@ public class ExternalApiService : IExternalApiService
             EvalDuration = lastResponse?.EvalDuration ?? 0
         };
     }
+
 
 }

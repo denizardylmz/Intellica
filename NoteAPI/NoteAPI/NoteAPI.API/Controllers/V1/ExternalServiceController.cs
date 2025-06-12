@@ -29,36 +29,39 @@ public class ForecastController : ControllerBase
     private readonly IExternalApiService _externalApiService;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ExternalServices _externalServices;
+    private readonly IOllamaChatBotService _ollamaService;
     private readonly Promts _promts;
 
-    public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IExternalApiService externalApiService)
+    public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IExternalApiService externalApiService, IOllamaChatBotService ollamaChatBotService)
     {
         _configuration = configuration;
         _externalApiService = externalApiService;
         _httpClientFactory = httpClientFactory;
         _externalServices = _configuration.GetSection("ExternalServices").Get<ExternalServices>();
         _promts = _configuration.GetSection("Promts").Get<Promts>();
+        _ollamaService = ollamaChatBotService;
+
     }
-    
-    
+
+
     [AllowAnonymous]
     [HttpPost("forecast/current")]
     public async Task<ActionResult<Response<string, WeatherResponse>>> ForacastCurrent([FromBody] Request<string> request)
-    {            
+    {
         var queryParams = new List<(string, string)>()
         {
-            ("q", request.Payload) 
+            ("q", request.Payload)
         };
         var client = _httpClientFactory.CreateClient(_externalServices.ForecastService.Name);
         _externalApiService.SetClient(client);
 
         var response = new Response<string, WeatherResponse>(
             request.Payload,
-            _externalApiService.GetAsync<WeatherResponse>("v1/current.json", queryParams: queryParams , keyName:"key", _externalServices.ForecastService.Key)
+            _externalApiService.GetAsync<WeatherResponse>("v1/current.json", queryParams: queryParams, keyName: "key", _externalServices.ForecastService.Key)
         );
 
         await response.ExecuteTask();
-        
+
         if (response.ResponseContent == null) return NoContent();
         return Ok(response);
     }
@@ -86,7 +89,7 @@ public class ForecastController : ControllerBase
 
         var responseOllama = new Response<string, OllamaFullResponse>(
             request.Payload,
-            _externalApiService.TalkWithAI(OllamaRequest)
+            _ollamaService.TalkWithAIAsync(OllamaRequest)
         );
         await responseOllama.ExecuteTask();
 
@@ -97,13 +100,13 @@ public class ForecastController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("ask")]
-    public async Task<ActionResult<Response<OllamaFullResponse, OllamaRequest>>> AskToAI([FromBody] Request<string> request)
+    public async Task<ActionResult<Response<OllamaRequest, OllamaFullResponse>>> AskToAI([FromBody] Request<string> request)
     {
         var OllamaRequest = new OllamaRequest(_externalServices.OllamaModel.ModelName, request.Payload);
 
         var response = new Response<string, OllamaFullResponse>(
             request.Payload,
-            _externalApiService.TalkWithAI(OllamaRequest)
+            _ollamaService.TalkWithAIAsync(OllamaRequest) 
         );
         await response.ExecuteTask();
 

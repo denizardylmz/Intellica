@@ -15,6 +15,8 @@ using NoteAPI.Repo.SqlDatabase.Context;
 using NoteAPI.Repo.SqlDatabase.DTO;
 using NoteAPI.Services.Contracts;
 using NoteAPI.Services.Core;
+using NoteAPI.Services.Models.Binance;
+using NoteAPI.Services.Models.OllamaModels;
 
 namespace NoteAPI.Services.Services
 {
@@ -24,13 +26,20 @@ namespace NoteAPI.Services.Services
         private readonly NoteAPISqlDbContext _context;
         private readonly IMapper _mapper;
         private readonly ILogger<BinanceService> _logger;
+        private readonly Promts _promts;
+        private readonly IOllamaChatBotService _chatBotService;
+        private readonly ExternalServices _externalServices;
 
-        public BinanceService(IConfiguration configuration, NoteAPISqlDbContext context, IMapper mapper, ILogger<BinanceService> logger)
+
+        public BinanceService(IConfiguration configuration, NoteAPISqlDbContext context, IMapper mapper, ILogger<BinanceService> logger, IOllamaChatBotService chatBotService)
         {
             _context = context;
             _binanceSettings = configuration.GetSection("BinanceSettings").Get<BinanceSettings>();
             _mapper = mapper;
             _logger = logger;
+            _promts = configuration.GetSection("Promts").Get<Promts>();
+            _externalServices = configuration.GetSection("ExternalServices").Get<ExternalServices>();
+            _chatBotService = chatBotService;
         }
 
         public async Task<decimal?> GetRsiAsync(string symbol, KlineInterval interval = KlineInterval.OneMinute, int limit = 30)
@@ -52,6 +61,112 @@ namespace NoteAPI.Services.Services
             var closes = klinesResult.Data.Select(k => k.ClosePrice).ToList();
             return StockMathCore.CalculateRSI(closes, limit);
         }
+
+        public async Task<(List<decimal?>, List<decimal?>)> GetEMAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var client = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(_binanceSettings.Key, _binanceSettings.Secret);
+                options.AutoTimestamp = true;
+            });
+
+            var klinesResult = await client.SpotApi.ExchangeData.GetKlinesAsync(
+                symbol: symbol,
+                interval: interval,
+                limit: 150);
+
+            if (!klinesResult.Success)
+                return (null,null);
+
+            var closes = klinesResult.Data.Select(k => k.ClosePrice).ToList();
+            return StockMathCore.CalculateEMA50and100(closes);
+        }
+
+        public async Task<MacdResult> GetMACDAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var client = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(_binanceSettings.Key, _binanceSettings.Secret);
+                options.AutoTimestamp = true;
+            });
+
+            var klinesResult = await client.SpotApi.ExchangeData.GetKlinesAsync(
+                symbol: symbol,
+                interval: interval,
+                limit: 150);
+
+            if (!klinesResult.Success)
+                return null;
+
+            var closes = klinesResult.Data.Select(k => k.ClosePrice).ToList();
+
+            return StockMathCore.CalculateMACD(closes);
+        }
+
+        public async Task<BollingerResult> GetBollingerAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var client = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(_binanceSettings.Key, _binanceSettings.Secret);
+                options.AutoTimestamp = true;
+            });
+
+            var klinesResult = await client.SpotApi.ExchangeData.GetKlinesAsync(
+                symbol: symbol,
+                interval: interval,
+                limit: 100);
+
+            if (!klinesResult.Success)
+                return null;
+
+            var closes = klinesResult.Data.Select(k => k.ClosePrice).ToList();
+            return StockMathCore.CalculateBollingerBands(closes);
+        }
+
+        public async Task<List<decimal?>> GetStochasticRsiAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var client = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(_binanceSettings.Key, _binanceSettings.Secret);
+                options.AutoTimestamp = true;
+            });
+
+            var klinesResult = await client.SpotApi.ExchangeData.GetKlinesAsync(
+                symbol: symbol,
+                interval: interval,
+                limit: 100
+            );
+
+            if (!klinesResult.Success)
+                return null;
+
+            var closes = klinesResult.Data.Select(k => k.ClosePrice).ToList();
+            return StockMathCore.CalculateStochasticRsi(closes);
+        }
+
+        public async Task<AnalysisResultDto> GetAnalysisAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var rsi = await GetRsiAsync(symbol, interval, 14);
+            var (ema50, ema100) = await GetEMAsync(symbol, interval);
+            var macd = await GetMACDAsync(symbol, interval);
+            var bollinger = await GetBollingerAsync(symbol, interval);
+            var stochasticRsi = await GetStochasticRsiAsync(symbol, interval);
+
+            return new AnalysisResultDto
+            {
+                Rsi = rsi,
+                Ema50 = ema50,
+                Ema100 = ema100,
+                MacdLine = macd?.MacdLine,
+                SignalLine = macd?.SignalLine,
+                Histogram = macd?.Histogram,
+                UpperBand = bollinger?.UpperBand,
+                MiddleBand = bollinger?.MiddleBand,
+                LowerBand = bollinger?.LowerBand,
+                StochasticRsi = stochasticRsi
+            };
+        }
+
 
         public async Task FetchKlineDataToDBAsync()
         {
@@ -110,6 +225,51 @@ namespace NoteAPI.Services.Services
                 }
             }
         }
+
+
+        public async Task<OllamaFullResponse> AnalyzeMarketWithAIAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            try
+            {
+                var indicators = await GetAnalysisAsync(symbol, interval);
+                var prompt = GenerateAnalysisPrompt(symbol, indicators);
+
+                var ollamaRequest = new OllamaRequest(
+                    _externalServices.OllamaModel.ModelName,
+                    prompt,
+                    system: _promts.CryptoAnalyst
+                );
+
+                var result = await _chatBotService.TalkWithAIAsync(ollamaRequest);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"AI analysis failed for symbol: {symbol}");
+                return null;
+            }
+        }
+
+        private string GenerateAnalysisPrompt(string symbol, AnalysisResultDto indicators)
+        {
+            
+            var interpolated = _promts.CryptoAnalyst
+                .Replace("{{symbol}}", symbol)
+                .Replace("{{rsi}}", indicators.Rsi?.ToString() ?? "N/A")
+                .Replace("{{ema50}}", string.Join(", ", indicators.Ema50?.TakeLast(5) ?? Enumerable.Empty<decimal?>()))
+                .Replace("{{ema100}}", string.Join(", ", indicators.Ema100?.TakeLast(5) ?? Enumerable.Empty<decimal?>()))
+                .Replace("{{macdLine}}", string.Join(", ", indicators.MacdLine?.TakeLast(5) ?? Enumerable.Empty<decimal?>()))
+                .Replace("{{signalLine}}", string.Join(", ", indicators.SignalLine?.TakeLast(5) ?? Enumerable.Empty<decimal?>()))
+                .Replace("{{histogram}}", string.Join(", ", indicators.Histogram?.TakeLast(5) ?? Enumerable.Empty<decimal?>()))
+                .Replace("{{upperBand}}", indicators.UpperBand?.LastOrDefault()?.ToString() ?? "N/A")
+                .Replace("{{middleBand}}", indicators.MiddleBand?.LastOrDefault()?.ToString() ?? "N/A")
+                .Replace("{{lowerBand}}", indicators.LowerBand?.LastOrDefault()?.ToString() ?? "N/A")
+                .Replace("{{stochRsi}}", string.Join(", ", indicators.StochasticRsi?.TakeLast(5) ?? Enumerable.Empty<decimal?>()));
+
+            return interpolated;
+        }
+
 
         public async Task<BinancePrice> GetCurrentPriceAsync(string symbol)
         {

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System;
 using NoteAPI.Services.Core;
 using Microsoft.Extensions.Logging;
+using NoteAPI.Services.Models.Binance;
 
 namespace NoteAPI.API.Controllers.V1
 {
@@ -46,7 +47,7 @@ namespace NoteAPI.API.Controllers.V1
         }
 
         [AllowAnonymous]
-        [HttpGet("rsi/current/{symbol}")]
+        [HttpGet("rsi/{symbol}")]
         public async Task<ActionResult<Response<string, decimal?>>> AskToAI(string symbol, [FromQuery] int day = 14, [ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.OneMinute)
         {
             var response = new Response<string, decimal?>(
@@ -59,6 +60,104 @@ namespace NoteAPI.API.Controllers.V1
             if (response.ResponseContent == null) return NoContent();
             return Ok(response);
         }
+
+        [AllowAnonymous]
+        [HttpGet("emo/{symbol}")]
+        public async Task<ActionResult<Response<string, (List<decimal?>, List<decimal?>)>>> AskToAI(string symbol, [ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var response = new Response<string, (List<decimal?>, List<decimal?>)>(
+                symbol,
+                _binanceService.GetEMAsync(symbol, interval: interval)
+            );
+            await response.ExecuteTask();
+
+            if (!response.IsSuccessfull) return BadRequest(response.Error);
+            if (response.ResponseContent == (null,null)) return NoContent();
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("macd/{symbol}")]
+        public async Task<ActionResult<Response<string, MacdResult>>> GetMACD(string symbol, [ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var response = new Response<string, MacdResult>(
+                symbol,
+                _binanceService.GetMACDAsync(symbol, interval)
+            );
+            await response.ExecuteTask();
+
+            if (!response.IsSuccessfull) return BadRequest(response.Error);
+            if (response.ResponseContent == null) return NoContent();
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("bollinger/{symbol}")]
+        public async Task<ActionResult<Response<string, BollingerResult>>> GetBollinger(string symbol, [ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var response = new Response<string, BollingerResult>(
+                symbol,
+                _binanceService.GetBollingerAsync(symbol, interval)
+            );
+
+            await response.ExecuteTask();
+
+            if (!response.IsSuccessfull) return BadRequest(response.Error);
+            if (response.ResponseContent == null) return NoContent();
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("stochrsi/{symbol}")]
+        public async Task<ActionResult<Response<string, List<decimal?>>>> GetStochasticRsi(string symbol, [ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var response = new Response<string, List<decimal?>>(
+                symbol,
+                _binanceService.GetStochasticRsiAsync(symbol, interval)
+            );
+
+            await response.ExecuteTask();
+
+            if (!response.IsSuccessfull) return BadRequest(response.Error);
+            if (response.ResponseContent == null) return NoContent();
+
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("analysis/{symbol}")]
+        public async Task<ActionResult<Response<string, AnalysisResultDto>>> GetAnalysis(string symbol, [ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var response = new Response<string, AnalysisResultDto>(
+                symbol,
+                _binanceService.GetAnalysisAsync(symbol, interval)
+            );
+            await response.ExecuteTask();
+
+            if (!response.IsSuccessfull) return BadRequest(response.Error);
+            if (response.ResponseContent == null) return NoContent();
+            return Ok(response);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("analysis/ai/{symbol}")]
+        public async Task<ActionResult<Response<string, OllamaFullResponse>>> GetAnalysisAI(string symbol,[ModelBinder(BinderType = typeof(KlineIntervalModelBinder))] KlineInterval interval = KlineInterval.FifteenMinutes)
+        {
+            var response = new Response<string, OllamaFullResponse>(
+                symbol,
+                _binanceService.AnalyzeMarketWithAIAsync(symbol)
+            );
+
+            await response.ExecuteTask();
+
+            if (!response.IsSuccessfull)
+                return BadRequest(response.Error);
+            if (response.ResponseContent == null)
+                return NoContent();
+            return Ok(response);
+        }
+
+
 
         [AllowAnonymous]
         [HttpGet("test")]

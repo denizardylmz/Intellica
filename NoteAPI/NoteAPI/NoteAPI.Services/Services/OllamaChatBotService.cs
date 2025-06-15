@@ -17,12 +17,13 @@ namespace NoteAPI.Services.Services
     public class OllamaChatBotService : IOllamaChatBotService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly HttpClient _aiClient;
+        private readonly HttpClient? _aiClient;
 
-        public OllamaChatBotService(IConfiguration configuration)
+        public OllamaChatBotService(IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
             var config = configuration.GetSection("ExternalServices").Get<ExternalServices>();
-            _aiClient = _httpClientFactory.CreateClient(config.OllamaModel.Name);
+            _httpClientFactory = httpClientFactory;
+            _aiClient = httpClientFactory.CreateClient(config.OllamaModel.Name);
         }
 
         public async Task<OllamaFullResponse> TalkWithAIAsync(OllamaRequest request, CancellationToken cancellationToken = default)

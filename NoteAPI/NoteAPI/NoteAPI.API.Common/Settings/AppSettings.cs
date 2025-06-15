@@ -82,6 +82,7 @@ namespace NoteAPI.API.Common.Settings
     public class Promts
     {
         public string WeatherSpecialist { get; set; }
+        public string CryptoAnalyst { get; set; }
     }
 
     public class BinanceSettings

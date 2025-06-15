@@ -11,6 +11,7 @@ using NoteAPI.Services;
 using NoteAPI.Services.Contracts;
 using NoteAPI.Services.Services;
 using NoteAPI.Services.Validators;
+using Telegram.Bot;
 
 namespace NoteAPI.IoC.Configuration.DI
 {
@@ -30,6 +31,13 @@ namespace NoteAPI.IoC.Configuration.DI
                 services.AddScoped<IBinanceService, BinanceService>();
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
+
+                services.AddSingleton<ITelegramBotClient>(sp =>
+                {
+                    var config = sp.GetRequiredService<IConfiguration>();
+                    return new TelegramBotClient(config["Telegram:BotToken"]); //Telegram Botu eklenecek!
+                });
+
 
                 services.AddHttpContextAccessor();
             }

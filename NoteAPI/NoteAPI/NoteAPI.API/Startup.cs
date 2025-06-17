@@ -36,6 +36,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using NoteAPI.API.Jobs;
+using Telegram.Bot;
 
 #pragma warning disable CS1591
 namespace NoteAPI.API

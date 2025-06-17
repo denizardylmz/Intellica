@@ -31,8 +31,9 @@ public class ForecastController : ControllerBase
     private readonly ExternalServices _externalServices;
     private readonly IOllamaChatBotService _ollamaService;
     private readonly Promts _promts;
+    private readonly ITelegramMessageService _telegramMessageService;
 
-    public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IExternalApiService externalApiService, IOllamaChatBotService ollamaChatBotService)
+    public ForecastController(IConfiguration configuration, IHttpClientFactory httpClientFactory, IExternalApiService externalApiService, IOllamaChatBotService ollamaChatBotService, ITelegramMessageService telegramMessageService)
     {
         _configuration = configuration;
         _externalApiService = externalApiService;
@@ -40,6 +41,7 @@ public class ForecastController : ControllerBase
         _externalServices = _configuration.GetSection("ExternalServices").Get<ExternalServices>();
         _promts = _configuration.GetSection("Promts").Get<Promts>();
         _ollamaService = ollamaChatBotService;
+        _telegramMessageService = telegramMessageService;
 
     }
 
@@ -112,5 +114,13 @@ public class ForecastController : ControllerBase
 
         if (response.ResponseContent == null) return NoContent();
         return Ok(response);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("test")]
+    public async Task<ActionResult> Test([FromBody] Request<string> request)
+    {
+        await _telegramMessageService.SendMessageAsync(request.Payload);
+        return Ok();
     }
 }

@@ -31,11 +31,13 @@ namespace NoteAPI.IoC.Configuration.DI
                 services.AddScoped<IBinanceService, BinanceService>();
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
+                services.AddScoped<ITelegramMessageService, TelegramMessageService>();
 
                 services.AddSingleton<ITelegramBotClient>(sp =>
                 {
                     var config = sp.GetRequiredService<IConfiguration>();
-                    return new TelegramBotClient(config["Telegram:BotToken"]); //Telegram Botu eklenecek!
+                    return new TelegramBotClient(config["Telegram:BotToken"]);
+
                 });
 
 

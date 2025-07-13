@@ -1,4 +1,4 @@
-# 🤖 NoteAPI - Telegram-Based Crypto Insight Bot
+# 🤖 Intellica - Telegram-Based Crypto Insight Bot
 
 A modular, command-based Telegram chatbot that provides real-time crypto insights, realized PnL tracking, and extensible support for AI-enhanced services like weather forecasts and note management.
 

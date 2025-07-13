@@ -19,7 +19,7 @@ namespace NoteAPI.API
             WebHost.CreateDefaultBuilder(args)
             //.ConfigureKestrel(options =>
             //{
-            //    options.ListenAnyIP(500); //Evdeki cihazları dinlemesi için.
+            //    options.ListenAnyIP(5001); //Evdeki cihazları dinlemesi için.
             //})
             .UseStartup<Startup>();
     }

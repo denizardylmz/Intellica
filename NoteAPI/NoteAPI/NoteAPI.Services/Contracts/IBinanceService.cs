@@ -22,5 +22,7 @@ namespace NoteAPI.Services.Contracts
         Task<AnalysisResultDto> GetAnalysisAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes);
         Task<OllamaFullResponse> AnalyzeMarketWithAIAsync(string symbol, KlineInterval interval = KlineInterval.FifteenMinutes);
         Task FetchKlineDataToDBAsync();
+        Task<decimal> GetTotalRealizedPnL(string symbol, DateTime startDate, bool sendChatbotMessage = false);
+        Task<decimal> GetPnLAllSpots(DateTime startDate, bool sendChatbotMessage = false);
     }
 }

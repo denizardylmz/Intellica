@@ -29,9 +29,17 @@ namespace NoteAPI.Services.Services
         private readonly Promts _promts;
         private readonly IOllamaChatBotService _chatBotService;
         private readonly ExternalServices _externalServices;
+        private readonly ITelegramMessageService _telegramMessageService;
 
 
-        public BinanceService(IConfiguration configuration, NoteAPISqlDbContext context, IMapper mapper, ILogger<BinanceService> logger, IOllamaChatBotService chatBotService)
+        public BinanceService(
+            IConfiguration configuration,
+            NoteAPISqlDbContext context,
+            IMapper mapper,
+            ILogger<BinanceService> logger,
+            IOllamaChatBotService chatBotService,
+            ITelegramMessageService telegramMessageService
+            )
         {
             _context = context;
             _binanceSettings = configuration.GetSection("BinanceSettings").Get<BinanceSettings>();
@@ -40,6 +48,7 @@ namespace NoteAPI.Services.Services
             _promts = configuration.GetSection("Promts").Get<Promts>();
             _externalServices = configuration.GetSection("ExternalServices").Get<ExternalServices>();
             _chatBotService = chatBotService;
+            _telegramMessageService = telegramMessageService;
         }
 
         public async Task<decimal?> GetRsiAsync(string symbol, KlineInterval interval = KlineInterval.OneMinute, int limit = 30)
@@ -52,8 +61,8 @@ namespace NoteAPI.Services.Services
 
             var klinesResult = await client.SpotApi.ExchangeData.GetKlinesAsync(
                 symbol: symbol,
-                interval: interval,  
-                limit: limit + 1); 
+                interval: interval,
+                limit: limit + 1);
 
             if (!klinesResult.Success)
                 return null;
@@ -76,7 +85,7 @@ namespace NoteAPI.Services.Services
                 limit: 150);
 
             if (!klinesResult.Success)
-                return (null,null);
+                return (null, null);
 
             var closes = klinesResult.Data.Select(k => k.ClosePrice).ToList();
             return StockMathCore.CalculateEMA50and100(closes);
@@ -221,7 +230,7 @@ namespace NoteAPI.Services.Services
                     {
                         _logger.LogWarning($"Failed to Add data to Db for {_symbol}: {e.Message} - {e.InnerException?.Message}");
                         continue;
-                    }                    
+                    }
                 }
             }
         }
@@ -253,7 +262,7 @@ namespace NoteAPI.Services.Services
 
         private string GenerateAnalysisPrompt(string symbol, AnalysisResultDto indicators)
         {
-            
+
             var interpolated = _promts.CryptoAnalyst
                 .Replace("{{symbol}}", symbol)
                 .Replace("{{rsi}}", indicators.Rsi?.ToString() ?? "N/A")
@@ -270,7 +279,6 @@ namespace NoteAPI.Services.Services
             return interpolated;
         }
 
-
         public async Task<BinancePrice> GetCurrentPriceAsync(string symbol)
         {
             var client = new BinanceRestClient(options =>
@@ -283,6 +291,61 @@ namespace NoteAPI.Services.Services
             var result = await client.SpotApi.ExchangeData.GetPriceAsync(symbol);
 
             return result.Data;
+        }
+
+        public async Task<decimal> GetTotalRealizedPnL(string symbol, DateTime startDate, bool sendChatbotMessage = false)
+        {
+            var client = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(_binanceSettings.Key, _binanceSettings.Secret);
+                options.AutoTimestamp = true;
+            });
+
+            var tradeHistory = await client.SpotApi.Trading.GetUserTradesAsync(symbol, startTime: startDate);
+            var TradeAnalzer = new TradeAnalyzer();
+            var result = TradeAnalzer.Analyze(tradeHistory.Data.ToList());
+
+            if (sendChatbotMessage)
+                _ = _telegramMessageService.SendProfitMessageAsync(symbol, startDate, result);
+
+            return result;
+        }
+
+
+        public async Task<decimal> GetPnLAllSpots(DateTime startDate, bool sendChatbotMessage = false)
+        {
+            var client = new BinanceRestClient(options =>
+            {
+                options.ApiCredentials = new ApiCredentials(_binanceSettings.Key, _binanceSettings.Secret);
+                options.AutoTimestamp = true;
+            });
+
+            var accountInfo = await client.SpotApi.Account.GetAccountInfoAsync();
+            var symbols = accountInfo.Data.Balances
+                            .Where(b => b.Total > 0) // Aktif coinler
+                            .Select(b => b.Asset)
+                            .ToList();
+
+            var TradeAnalzer = new TradeAnalyzer();
+            decimal totalPnL = 0;
+            foreach (var symbol in symbols)
+            {
+                try
+                {
+                    var tradeHistory = await client.SpotApi.Trading.GetUserTradesAsync(symbol + "USDT", startTime: startDate);
+                    var result = TradeAnalzer.Analyze(tradeHistory.Data.ToList());
+                    totalPnL += result;
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+            }
+
+            if (sendChatbotMessage)
+                _ = _telegramMessageService.SendProfitMessageAsync($"All Spots ({string.Join(", ", symbols)})", startDate, totalPnL);
+
+            return totalPnL;
         }
     }
 }

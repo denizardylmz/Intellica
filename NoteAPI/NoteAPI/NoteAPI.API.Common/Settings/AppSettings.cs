@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace NoteAPI.API.Common.Settings
 {
@@ -92,11 +93,21 @@ namespace NoteAPI.API.Common.Settings
         public BinanceKlineFetchOptions BinanceKlineFetchOptions {get; set;}
     }
 
+
     public class BinanceKlineFetchOptions
     {
         public string[] Symbols { get; set; }
         public string Interval { get; set; }
         public int Limit { get; set; }
         public int RsiPeriod { get; set; }
+    }
+
+
+    public class TelegramSettings
+    {
+        public string BotToken { get; set; }
+        public string ChatId { get; set; }
+        public string MessageTemplate { get; set; }
+        public List<string> EnabledCommands { get; set; } = new();
     }
 }

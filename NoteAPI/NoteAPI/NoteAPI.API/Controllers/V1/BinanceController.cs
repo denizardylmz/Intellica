@@ -158,12 +158,20 @@ namespace NoteAPI.API.Controllers.V1
         }
 
 
+        [AllowAnonymous]
+        [HttpGet("PnL/{symbol}")]
+        public async Task<IActionResult> Test(string symbol, DateTime startFrom)
+        {
+            var reuslt = await _binanceService.GetTotalRealizedPnL(symbol, startFrom);
+            return Ok(reuslt);
+        }
 
         [AllowAnonymous]
         [HttpGet("test")]
-        public async Task Test()
+        public async Task<IActionResult> Test()
         {
-            await _binanceService.FetchKlineDataToDBAsync();
+            await _binanceService.GetPnLAllSpots(DateTime.Now.Date.AddDays(-14), true);
+            return Ok();
         }
     }
 

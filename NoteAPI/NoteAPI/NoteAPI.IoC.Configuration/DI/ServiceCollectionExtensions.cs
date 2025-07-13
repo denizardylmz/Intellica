@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 
 using FluentValidation;
@@ -8,7 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using NoteAPI.API.Common.Settings;
 using NoteAPI.Repo.SqlDatabase.Context;
 using NoteAPI.Services;
+using NoteAPI.Services.BackgroundServices;
 using NoteAPI.Services.Contracts;
+using NoteAPI.Services.Core.Commands;
 using NoteAPI.Services.Services;
 using NoteAPI.Services.Validators;
 using Telegram.Bot;
@@ -31,7 +34,10 @@ namespace NoteAPI.IoC.Configuration.DI
                 services.AddScoped<IBinanceService, BinanceService>();
                 services.AddScoped<INoteService, NoteService>();
                 services.AddScoped<IUserService, UserService>();
-                services.AddScoped<ITelegramMessageService, TelegramMessageService>();
+
+                
+                services.AddSingleton<TelegramMessageService>();
+                services.AddSingleton<ITelegramMessageService>(sp => sp.GetRequiredService<TelegramMessageService>());
 
                 services.AddSingleton<ITelegramBotClient>(sp =>
                 {
@@ -40,6 +46,26 @@ namespace NoteAPI.IoC.Configuration.DI
 
                 });
 
+                var TelegramSettings = configuration.GetSection("Telegram").Get<TelegramSettings>();
+
+                var enabled = TelegramSettings.EnabledCommands
+                                              .Select(x => x.ToLowerInvariant())
+                                              .ToHashSet();
+                var commandAssembly = Assembly.Load("NoteAPI.Services"); // DLL adı neyse o
+
+                var commandTypes = commandAssembly.GetTypes().Where(x => 
+                    typeof(ICommandHandler).IsAssignableFrom(x) &&
+                    !x.IsAbstract &&
+                    x.GetCustomAttribute<TelegramCommandAttribute>() is { } attr &&
+                    enabled.Contains(attr.CommandName.ToLowerInvariant())
+                );
+
+                foreach (var type in commandTypes)
+                {
+                    services.AddSingleton(typeof(ICommandHandler), type);
+                }
+
+                services.AddHostedService<TelegramBotBackgroundService>();
 
                 services.AddHttpContextAccessor();
             }

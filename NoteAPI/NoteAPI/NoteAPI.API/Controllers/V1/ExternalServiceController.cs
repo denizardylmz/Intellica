@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -120,7 +121,9 @@ public class ForecastController : ControllerBase
     [HttpPost("test")]
     public async Task<ActionResult> Test([FromBody] Request<string> request)
     {
-        await _telegramMessageService.SendMessageAsync(request.Payload);
+        CancellationToken cancellationToken = HttpContext.RequestAborted;
+
+        await _telegramMessageService.SendBotMessageAsync(request.Payload, cancellationToken);
         return Ok();
     }
 }
